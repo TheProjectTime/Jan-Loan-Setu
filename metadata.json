@@ -1,0 +1,6 @@
+{
+  "name": "Jan Loan Setu",
+  "description": "Smart government loan scheme finder, financial EMI calculator, and nearest authorized channel partner locator.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
