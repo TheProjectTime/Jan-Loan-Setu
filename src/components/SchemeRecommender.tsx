@@ -3,7 +3,7 @@ import {
   CheckCircle2, AlertCircle, ArrowRight, Calculator, MapPin, 
   FileText, Building, Percent, Clock, DollarSign, 
   HelpCircle, UserCheck, ShieldAlert, Award, ExternalLink,
-  ChevronDown, ChevronUp, Check, Sparkles, RotateCcw
+  ChevronDown, ChevronUp, Check, Sparkles, RotateCcw, Zap
 } from 'lucide-react';
 import { UserFinancialProfile, LoanScheme, SchemeMatchResult, LoanPurpose, BeneficiaryCategory } from '../types';
 import { formatINR, formatINRLakhCrore } from '../utils/calculator';
@@ -57,6 +57,124 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
 
   const QUICK_COSTS = [50000, 100000, 200000, 500000, 1000000, 1500000, 2500000, 5000000];
 
+  const TEST_PERSONAS = [
+    {
+      id: 'kirana-sc',
+      label: isHindi ? 'गिरिडीह किराना दुकान (₹1 लाख)' : 'Giridih Small Shop (₹1 Lakh)',
+      name: 'Sunil Kumar Paswan',
+      beneficiary: isHindi ? 'सुनील पासवान • SC पुरुष' : 'Sunil Paswan • SC Male, 32',
+      amount: '₹1,00,000',
+      rate: '4.0% p.a.',
+      tag: 'NSFDC Micro-Credit',
+      tagColor: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      profile: {
+        name: 'Sunil Kumar Paswan',
+        category: 'SC' as const,
+        gender: 'female' as const, // will be male
+        age: 32,
+        annualFamilyIncome: 180000,
+        purpose: 'small_shop' as const,
+        businessIdea: 'Grocery & General Kirana Store in Pachamba Market',
+        projectCost: 100000,
+        state: 'Jharkhand',
+        district: 'Giridih',
+        pincode: '815301'
+      }
+    },
+    {
+      id: 'boutique-sc-woman',
+      label: isHindi ? 'एससी महिला बुटीक (₹14 लाख)' : 'SC Woman Boutique (₹14 Lakh)',
+      name: 'Sushila Devi',
+      beneficiary: isHindi ? 'सुशीला देवी • SC महिला' : 'Sushila Devi • SC Female, 29',
+      amount: '₹14,00,000',
+      rate: '3.5% p.a.',
+      tag: 'Mahila Samriddhi',
+      tagColor: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+      profile: {
+        name: 'Sushila Devi',
+        category: 'SC' as const,
+        gender: 'female' as const,
+        age: 29,
+        annualFamilyIncome: 140000,
+        purpose: 'micro_business' as const,
+        businessIdea: 'Embroidery, Tailoring & Garment Workshop',
+        projectCost: 1400000,
+        state: 'Jharkhand',
+        district: 'Giridih',
+        pincode: '815301'
+      }
+    },
+    {
+      id: 'education-sc',
+      label: isHindi ? 'बी.टेक शिक्षा ऋण (₹8 लाख)' : 'B.Tech Education Loan (₹8 Lakh)',
+      name: 'Rohan Chaudhary',
+      beneficiary: isHindi ? 'रोहन चौधरी • SC छात्र' : 'Rohan Chaudhary • SC Male, 20',
+      amount: '₹8,00,000',
+      rate: '3.5% p.a.',
+      tag: 'NSFDC Education',
+      tagColor: 'bg-sky-50 text-sky-700 border-sky-200',
+      profile: {
+        name: 'Rohan Chaudhary',
+        category: 'SC' as const,
+        gender: 'male' as const,
+        age: 20,
+        annualFamilyIncome: 240000,
+        purpose: 'education_domestic' as const,
+        businessIdea: '4-Year B.Tech in Computer Science at BIT Mesra',
+        projectCost: 800000,
+        state: 'Jharkhand',
+        district: 'Ranchi',
+        pincode: '834002'
+      }
+    },
+    {
+      id: 'sanitation-vehicle',
+      label: isHindi ? 'सफाई मशीन वाहन (₹15 लाख)' : 'Sanitation Vehicle (₹15 Lakh)',
+      name: 'Karan Valmiki',
+      beneficiary: isHindi ? 'करन वाल्मीकि • सफाई कर्मचारी' : 'Karan Valmiki • Sanitation, 36',
+      amount: '₹15,00,000',
+      rate: '4.0% p.a.',
+      tag: 'NSKFDC Swachhta',
+      tagColor: 'bg-amber-50 text-amber-800 border-amber-200',
+      profile: {
+        name: 'Karan Valmiki',
+        category: 'SafaiKaramchari' as const,
+        gender: 'male' as const,
+        age: 36,
+        annualFamilyIncome: 200000,
+        purpose: 'sanitation_vehicle' as const,
+        businessIdea: 'Mechanized Suction Machine & Desludging Tanker',
+        projectCost: 1500000,
+        state: 'Uttar Pradesh',
+        district: 'Lucknow',
+        pincode: '226001'
+      }
+    },
+    {
+      id: 'obc-dairy',
+      label: isHindi ? 'ओबीसी डेयरी फार्म (₹3 लाख)' : 'OBC Dairy Farming (₹3 Lakh)',
+      name: 'Manoj Yadav',
+      beneficiary: isHindi ? 'मनोज यादव • OBC पुरुष' : 'Manoj Yadav • OBC Male, 34',
+      amount: '₹3,00,000',
+      rate: '5.0% p.a.',
+      tag: 'NBCFDC Micro',
+      tagColor: 'bg-purple-50 text-purple-700 border-purple-200',
+      profile: {
+        name: 'Manoj Yadav',
+        category: 'OBC' as const,
+        gender: 'male' as const,
+        age: 34,
+        annualFamilyIncome: 220000,
+        purpose: 'agriculture_allied' as const,
+        businessIdea: 'Dairy Farming, Milk Chilling & Fodder Unit',
+        projectCost: 300000,
+        state: 'Bihar',
+        district: 'Patna',
+        pincode: '800001'
+      }
+    }
+  ];
+
   const handleInputChange = (field: keyof UserFinancialProfile, value: any) => {
     setProfile(prev => ({
       ...prev,
@@ -75,6 +193,79 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
 
   return (
     <div id="scheme-recommender-view" className="space-y-6">
+      {/* Quick Test Personas Card - Centered in Scheme Recommender */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-3.5">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shadow-2xs">
+              <Zap className="w-4 h-4 text-amber-500 fill-amber-500/20" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <span>{isHindi ? 'त्वरित टेस्ट प्रोफाइल (Quick Test Personas)' : 'Quick Test Personas'}</span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                  {isHindi ? '1-क्लिक टेस्ट' : '1-Click Auto-Fill'}
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500">
+                {isHindi 
+                  ? 'नीचे दिए गए किसी भी टेस्ट प्रोफाइल पर क्लिक करके तुरंत फॉर्म भरें और सरकारी योजना मैच देखें:' 
+                  : 'Click any sample persona below to auto-fill applicant criteria and verify matching schemes:'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Personas Horizontal Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+          {TEST_PERSONAS.map((p) => {
+            const isCurrentActive = profile.name === p.profile.name && profile.projectCost === p.profile.projectCost;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                id={`persona-btn-${p.id}`}
+                onClick={() => {
+                  setProfile({
+                    ...p.profile,
+                    gender: p.id === 'kirana-sc' ? 'male' : p.profile.gender
+                  });
+                }}
+                className={`text-left p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between select-none relative ${
+                  isCurrentActive
+                    ? 'bg-indigo-50/90 border-indigo-600 shadow-sm ring-2 ring-indigo-600/20'
+                    : 'bg-slate-50 hover:bg-slate-100/80 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-1 mb-1.5">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${p.tagColor}`}>
+                      {p.tag}
+                    </span>
+                    {isCurrentActive && (
+                      <span className="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">
+                        ✓
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="text-xs font-bold text-slate-900 line-clamp-1">
+                    {p.label}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    {p.beneficiary}
+                  </p>
+                </div>
+
+                <div className="mt-2.5 pt-2 border-t border-slate-200/70 flex items-center justify-between text-[11px]">
+                  <span className="font-extrabold text-slate-800">{p.amount}</span>
+                  <span className="font-semibold text-emerald-700">{p.rate}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Main Grid: Form on Left, Dynamic Recommendations on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Interactive Input Form (5 cols) */}

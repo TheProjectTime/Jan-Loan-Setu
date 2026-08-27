@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { Header } from './components/Header';
-import { Sidebar } from './components/Sidebar';
 import { DashboardView } from './components/DashboardView';
 import { SchemeRecommender } from './components/SchemeRecommender';
 import { FinancialCalculator } from './components/FinancialCalculator';
@@ -85,85 +84,76 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col selection:bg-indigo-600 selection:text-white">
-      {/* Header */}
+      {/* Header with Hamburger Menu */}
       <Header
         isHindi={isHindi}
         setIsHindi={setIsHindi}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
       />
 
-      {/* Main App Container with Sidebar & Content */}
+      {/* Main App Content Area */}
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex flex-col lg:flex-row gap-6 items-start">
-          {/* Left Navigation Sidebar */}
-          <Sidebar
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            onApplyPreset={handleApplyPreset}
-            isHindi={isHindi}
-          />
+        <main className="w-full min-w-0">
+          {activeTab === 'dashboard' && (
+            <DashboardView
+              onStartRecommendation={() => {
+                setActiveTab('recommender');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onNavigateToTab={(tab) => {
+                setActiveTab(tab);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              isHindi={isHindi}
+            />
+          )}
 
-          {/* Right Main Content Area */}
-          <main className="flex-1 w-full min-w-0">
-            {activeTab === 'dashboard' && (
-              <DashboardView
-                onStartRecommendation={() => {
-                  setActiveTab('recommender');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                onNavigateToTab={(tab) => {
-                  setActiveTab(tab);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                isHindi={isHindi}
-              />
-            )}
+          {activeTab === 'recommender' && (
+            <SchemeRecommender
+              profile={profile}
+              setProfile={setProfile}
+              bestMatch={bestMatch}
+              allMatches={allMatches}
+              onSelectScheme={setSelectedScheme}
+              onNavigateToCalculator={handleNavigateToCalculator}
+              onNavigateToLocator={handleNavigateToLocator}
+              onOpenSlipModal={handleOpenSlipModal}
+              isHindi={isHindi}
+            />
+          )}
 
-            {activeTab === 'recommender' && (
-              <SchemeRecommender
-                profile={profile}
-                setProfile={setProfile}
-                bestMatch={bestMatch}
-                allMatches={allMatches}
-                onSelectScheme={setSelectedScheme}
-                onNavigateToCalculator={handleNavigateToCalculator}
-                onNavigateToLocator={handleNavigateToLocator}
-                onOpenSlipModal={handleOpenSlipModal}
-                isHindi={isHindi}
-              />
-            )}
+          {activeTab === 'calculator' && (
+            <FinancialCalculator
+              selectedScheme={selectedScheme}
+              allSchemes={GOVERNMENT_SCHEMES}
+              onSelectScheme={setSelectedScheme}
+              profile={profile}
+              onNavigateToLocator={handleNavigateToLocator}
+              onOpenSlipModal={handleOpenSlipModal}
+              isHindi={isHindi}
+            />
+          )}
 
-            {activeTab === 'calculator' && (
-              <FinancialCalculator
-                selectedScheme={selectedScheme}
-                allSchemes={GOVERNMENT_SCHEMES}
-                onSelectScheme={setSelectedScheme}
-                profile={profile}
-                onNavigateToLocator={handleNavigateToLocator}
-                onOpenSlipModal={handleOpenSlipModal}
-                isHindi={isHindi}
-              />
-            )}
+          {activeTab === 'locator' && (
+            <PartnerLocator
+              selectedScheme={selectedScheme}
+              allSchemes={GOVERNMENT_SCHEMES}
+              onSelectScheme={setSelectedScheme}
+              profile={profile}
+              onOpenSlipModalWithPartner={handleOpenSlipModalWithPartner}
+              isHindi={isHindi}
+            />
+          )}
 
-            {activeTab === 'locator' && (
-              <PartnerLocator
-                selectedScheme={selectedScheme}
-                allSchemes={GOVERNMENT_SCHEMES}
-                onSelectScheme={setSelectedScheme}
-                profile={profile}
-                onOpenSlipModalWithPartner={handleOpenSlipModalWithPartner}
-                isHindi={isHindi}
-              />
-            )}
-
-            {activeTab === 'ai-advisor' && (
-              <AiAssistant
-                profile={profile}
-                selectedScheme={selectedScheme}
-                isHindi={isHindi}
-              />
-            )}
-          </main>
-        </div>
+          {activeTab === 'ai-advisor' && (
+            <AiAssistant
+              profile={profile}
+              selectedScheme={selectedScheme}
+              isHindi={isHindi}
+            />
+          )}
+        </main>
       </div>
 
       {/* Printable Pre-Application Slip Modal */}
