@@ -169,3 +169,21 @@ export interface PreApplicationSlip {
   };
   documentChecklist: string[];
 }
+
+export interface PincodeLookupResult {
+  pincode: string;
+  district: string;
+  city: string;
+  state: string;
+  latitude: number;
+  longitude: number;
+  postOfficeName?: string;
+  source: 'local_database' | 'postal_api' | 'prefix_estimate';
+}
+
+export interface NearestPartnerMatch {
+  partner: ChannelPartner;
+  distanceKm: number;
+  isDistrictMatch: boolean;
+  userLocationName: string;
+}

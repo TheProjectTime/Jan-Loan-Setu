@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   CheckCircle2, AlertCircle, ArrowRight, Calculator, MapPin, 
   FileText, Building, Percent, Clock, DollarSign, 
   HelpCircle, UserCheck, ShieldAlert, Award, ExternalLink,
-  ChevronDown, ChevronUp, Check, Sparkles, RotateCcw, Zap
+  ChevronDown, ChevronUp, Check, Sparkles, RotateCcw, Zap,
+  Phone, Loader2, Compass
 } from 'lucide-react';
-import { UserFinancialProfile, LoanScheme, SchemeMatchResult, LoanPurpose, BeneficiaryCategory } from '../types';
+import { UserFinancialProfile, LoanScheme, SchemeMatchResult, LoanPurpose, BeneficiaryCategory, PincodeLookupResult } from '../types';
 import { formatINR, formatINRLakhCrore } from '../utils/calculator';
+import { lookupPincode, lookupPincodeSync, getNearestPartnerForScheme } from '../utils/locator';
 
 interface SchemeRecommenderProps {
   profile: UserFinancialProfile;
@@ -33,6 +35,10 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
 }) => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'high_match' | 'low_interest' | 'women'>('all');
   const [expandedSchemeId, setExpandedSchemeId] = useState<string | null>(null);
+  const [isDetectingPincode, setIsDetectingPincode] = useState(false);
+  const [pincodeFeedback, setPincodeFeedback] = useState<PincodeLookupResult | null>(() => {
+    return profile.pincode ? lookupPincodeSync(profile.pincode) : null;
+  });
 
   const PURPOSE_OPTIONS: { id: LoanPurpose; labelEn: string; labelHi: string; icon: string }[] = [
     { id: 'small_shop', labelEn: 'Small Shop / Kirana', labelHi: 'किराना दुकान / छोटी दुकान', icon: '🏪' },
@@ -181,6 +187,76 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
       [field]: value
     }));
   };
+
+  const handlePincodeChange = async (pinValue: string) => {
+    const cleanPin = pinValue.replace(/\D/g, '').slice(0, 6);
+    
+    // Immediate sync update
+    setProfile(prev => ({
+      ...prev,
+      pincode: cleanPin
+    }));
+
+    if (cleanPin.length === 6) {
+      setIsDetectingPincode(true);
+      // Fast sync check first
+      const syncMatch = lookupPincodeSync(cleanPin);
+      if (syncMatch) {
+        setPincodeFeedback(syncMatch);
+        setProfile(prev => ({
+          ...prev,
+          pincode: cleanPin,
+          district: syncMatch.district,
+          state: syncMatch.state,
+          userCoords: {
+            latitude: syncMatch.latitude,
+            longitude: syncMatch.longitude
+          }
+        }));
+      }
+
+      // Try deeper async postal lookup
+      try {
+        const asyncMatch = await lookupPincode(cleanPin);
+        if (asyncMatch) {
+          setPincodeFeedback(asyncMatch);
+          setProfile(prev => ({
+            ...prev,
+            pincode: cleanPin,
+            district: asyncMatch.district,
+            state: asyncMatch.state,
+            userCoords: {
+              latitude: asyncMatch.latitude,
+              longitude: asyncMatch.longitude
+            }
+          }));
+        }
+      } catch (err) {
+        console.error('Pincode detection error:', err);
+      } finally {
+        setIsDetectingPincode(false);
+      }
+    } else if (cleanPin.length >= 3) {
+      const syncMatch = lookupPincodeSync(cleanPin);
+      if (syncMatch) {
+        setPincodeFeedback(syncMatch);
+      }
+    } else {
+      setPincodeFeedback(null);
+    }
+  };
+
+  // Find Nearest Authorized Partner for the Top Recommended Scheme
+  const nearestPartnerForBestMatch = useMemo(() => {
+    if (!bestMatch?.scheme) return null;
+    return getNearestPartnerForScheme(bestMatch.scheme.id, {
+      latitude: profile.userCoords?.latitude,
+      longitude: profile.userCoords?.longitude,
+      district: profile.district,
+      state: profile.state,
+      pincode: profile.pincode
+    });
+  }, [bestMatch, profile.userCoords, profile.district, profile.state, profile.pincode]);
 
   // Filter other schemes based on tab
   const filteredMatches = allMatches.filter(m => {
@@ -493,12 +569,93 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
             </div>
           </div>
 
-          {/* 7. Location (State & District & Pincode) */}
-          <div className="pt-2 border-t border-slate-100 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* 7. Location (PIN Code with Auto-Detection & State/District) */}
+          <div className="pt-3 border-t border-slate-100 space-y-3">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>{isHindi ? 'पिन कोड (PIN Code - स्वतः शहर/जिला पहचान)' : 'Postal PIN Code (Auto-Detects City & District)'}</span>
+                </label>
+                {isDetectingPincode && (
+                  <span className="text-[11px] text-indigo-600 font-semibold animate-pulse flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    {isHindi ? 'शहर पहचान रहे हैं...' : 'Detecting...'}
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <input
+                  id="input-pincode"
+                  type="text"
+                  maxLength={6}
+                  value={profile.pincode}
+                  onChange={e => handlePincodeChange(e.target.value)}
+                  placeholder={isHindi ? "6-अंक पिन कोड दर्ज करें (उदा. 815301, 834001, 800001, 226001)" : "Enter 6-digit PIN code (e.g. 815301, 834001, 800001, 226001)"}
+                  className="w-full bg-slate-50 border-2 border-indigo-200 focus:border-indigo-600 rounded-xl px-3.5 py-2.5 text-sm font-mono font-bold text-slate-900 focus:bg-white focus:outline-none transition shadow-2xs placeholder:font-sans placeholder:font-normal placeholder:text-slate-400"
+                />
+              </div>
+
+              {/* Quick PIN Code Test Chips */}
+              <div className="flex items-center gap-1.5 mt-2 overflow-x-auto pb-1 text-[11px]">
+                <span className="text-slate-500 font-medium shrink-0">{isHindi ? 'त्वरित पिन:' : 'Quick PINs:'}</span>
+                {[
+                  { pin: '815301', label: 'Giridih' },
+                  { pin: '834001', label: 'Ranchi' },
+                  { pin: '800001', label: 'Patna' },
+                  { pin: '226001', label: 'Lucknow' },
+                  { pin: '110001', label: 'Delhi' },
+                  { pin: '411001', label: 'Pune' }
+                ].map((item) => (
+                  <button
+                    key={item.pin}
+                    type="button"
+                    onClick={() => handlePincodeChange(item.pin)}
+                    className="px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 text-slate-700 font-mono text-[10px] font-semibold transition shrink-0 cursor-pointer"
+                  >
+                    {item.pin} ({item.label})
+                  </button>
+                ))}
+              </div>
+
+              {/* Real-Time Auto-Detected Location Banner */}
+              {profile.pincode && profile.pincode.length >= 3 && (
+                <div className="mt-2.5 p-3 rounded-xl bg-emerald-50/90 border border-emerald-300 text-xs flex items-center justify-between gap-2 shadow-2xs animate-fade-in">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-2xs">
+                      ✓
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-extrabold text-emerald-900 uppercase tracking-wider block">
+                        {isHindi ? '📍 स्वतः पहचाना गया शहर / जिला:' : '📍 Auto-Detected City & District:'}
+                      </span>
+                      <span className="font-black text-slate-900 text-sm">
+                        {profile.district || pincodeFeedback?.district || 'Recognized District'}
+                        {profile.state || pincodeFeedback?.state ? `, ${profile.state || pincodeFeedback?.state}` : ''}
+                      </span>
+                      {pincodeFeedback?.postOfficeName && (
+                        <span className="text-[10px] text-slate-600 block mt-0.5">
+                          Post Office: {pincodeFeedback.postOfficeName}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded-full border border-emerald-300 text-emerald-800 font-bold block shadow-2xs">
+                      PIN {profile.pincode}
+                    </span>
+                    <span className="text-[9px] text-emerald-700 font-semibold block mt-0.5">
+                      Auto-matched
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  {isHindi ? 'राज्य (State)' : 'State'}
+                  {isHindi ? 'पहचाना गया राज्य (State)' : 'Detected State'}
                 </label>
                 <select
                   id="select-state"
@@ -514,15 +671,20 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
                   <option value="Rajasthan">Rajasthan (राजस्थान)</option>
                   <option value="Madhya Pradesh">Madhya Pradesh (मध्य प्रदेश)</option>
                   <option value="West Bengal">West Bengal (पश्चिम बंगाल)</option>
+                  <option value="Gujarat">Gujarat (गुजरात)</option>
+                  <option value="Odisha">Odisha (ओडिशा)</option>
+                  <option value="Punjab">Punjab (पंजाब)</option>
                   <option value="Karnataka">Karnataka (कर्नाटक)</option>
                   <option value="Telangana">Telangana (तेलंगाना)</option>
                   <option value="Tamil Nadu">Tamil Nadu (तमिलनाडु)</option>
+                  <option value="Kerala">Kerala (केरल)</option>
+                  <option value="Assam">Assam (असम)</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  {isHindi ? 'जिला / शहर (District)' : 'District / City'}
+                  {isHindi ? 'पहचाना गया जिला (District)' : 'Detected District / City'}
                 </label>
                 <input
                   id="input-district"
@@ -530,24 +692,9 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
                   value={profile.district}
                   onChange={e => handleInputChange('district', e.target.value)}
                   placeholder={isHindi ? "उदा. रांची, पटना, गिरिडीह, लखनऊ..." : "Enter district (e.g. Ranchi, Patna...)"}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600 placeholder:text-slate-400"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600 placeholder:text-slate-400 font-semibold"
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                {isHindi ? 'पिन कोड (Pincode)' : 'Postal PIN Code'}
-              </label>
-              <input
-                id="input-pincode"
-                type="text"
-                maxLength={6}
-                value={profile.pincode}
-                onChange={e => handleInputChange('pincode', e.target.value.replace(/\D/g, ''))}
-                placeholder={isHindi ? "उदा. 815301 (6 अंक)" : "Enter 6-digit PIN code (e.g. 815301)"}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600 placeholder:text-slate-400"
-              />
             </div>
           </div>
         </div>
@@ -637,6 +784,78 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
                   </span>
                 </div>
               </div>
+
+              {/* NEAREST AUTHORIZED FINANCIAL INSTITUTION / CHANNEL PARTNER CARD */}
+              {nearestPartnerForBestMatch && (
+                <div id="nearest-institution-recommendation-card" className="bg-linear-to-br from-indigo-50/90 via-blue-50/70 to-slate-50 rounded-xl p-4 border border-indigo-200 mb-4 shadow-2xs space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-100 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-indigo-700 text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-2xs">
+                        <Building className="w-3 h-3" />
+                        {isHindi ? 'इस योजना हेतु निकटतम अधिकृत संस्थान' : 'Nearest Authorized Institution for this Scheme'}
+                      </span>
+                      <span className="text-[10px] font-bold text-indigo-950 bg-white px-2 py-0.5 rounded border border-indigo-200">
+                        {nearestPartnerForBestMatch.partner.typeLabel}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1 text-emerald-900 bg-emerald-100/90 px-2.5 py-0.5 rounded-full font-extrabold text-xs font-mono border border-emerald-300 self-start sm:self-auto shadow-2xs">
+                      <MapPin className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>{nearestPartnerForBestMatch.distanceKm} km {isHindi ? 'दूरी' : 'away'}</span>
+                      {nearestPartnerForBestMatch.isDistrictMatch && (
+                        <span className="text-[9px] bg-emerald-600 text-white px-1.5 py-0.2 rounded-full font-sans ml-1">
+                          {isHindi ? 'समान जिला' : 'Same District'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-black text-slate-900">
+                        {nearestPartnerForBestMatch.partner.name}
+                      </h4>
+                      <p className="text-xs font-bold text-indigo-900">
+                        🏛️ {nearestPartnerForBestMatch.partner.branchName}
+                      </p>
+                      <p className="text-[11px] text-slate-600 flex items-start gap-1 leading-snug">
+                        <span>📍</span>
+                        <span>{nearestPartnerForBestMatch.partner.address}</span>
+                      </p>
+                    </div>
+
+                    <div className="sm:text-right shrink-0 space-y-1.5 bg-white/80 p-2.5 rounded-lg border border-indigo-100">
+                      <div className="text-[11px]">
+                        <span className="font-extrabold text-slate-900 block">{nearestPartnerForBestMatch.partner.contactPerson}</span>
+                        <span className="text-[10px] text-indigo-700 font-semibold block">{nearestPartnerForBestMatch.partner.designation}</span>
+                      </div>
+                      <a
+                        href={`tel:${nearestPartnerForBestMatch.partner.phone}`}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md border border-emerald-300 transition shadow-2xs"
+                      >
+                        <Phone className="w-3 h-3 text-emerald-600" />
+                        <span>{nearestPartnerForBestMatch.partner.phone}</span>
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-indigo-100 text-[11px]">
+                    <span className="text-slate-600 flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-amber-600" />
+                      <span>{isHindi ? 'समय:' : 'Hours:'} {nearestPartnerForBestMatch.partner.workingHours}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onNavigateToLocator(bestMatch.scheme)}
+                      className="text-indigo-700 hover:text-indigo-900 font-bold flex items-center gap-1 cursor-pointer group"
+                    >
+                      <Compass className="w-3.5 h-3.5 text-indigo-600 group-hover:rotate-45 transition-transform" />
+                      <span className="underline">{isHindi ? 'शाखा का इंटरैक्टिव गूगल मैप व रूट देखें' : 'View on Interactive Map & Route'}</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Match Reasoning & Highlights */}
               <div className="bg-emerald-50/50 rounded-xl p-3.5 border border-emerald-200 mb-4">
@@ -757,6 +976,14 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
               ) : (
                 filteredMatches.slice(0, 6).map((m) => {
                   const isExpanded = expandedSchemeId === m.scheme.id;
+                  const schemeNearestPartner = getNearestPartnerForScheme(m.scheme.id, {
+                    latitude: profile.userCoords?.latitude,
+                    longitude: profile.userCoords?.longitude,
+                    district: profile.district,
+                    state: profile.state,
+                    pincode: profile.pincode
+                  });
+
                   return (
                     <div
                       key={m.scheme.id}
@@ -792,7 +1019,7 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
                             className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold rounded-lg transition flex items-center gap-1 cursor-pointer"
                           >
                             <MapPin className="w-3 h-3" />
-                            <span>{isHindi ? 'बैंक' : 'Bank'}</span>
+                            <span>{isHindi ? 'निकटतम बैंक' : 'Locate'}</span>
                           </button>
                           <button
                             onClick={() => setExpandedSchemeId(isExpanded ? null : m.scheme.id)}
@@ -804,13 +1031,24 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
                         </div>
                       </div>
 
-                      {/* Quick Meta Row */}
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-700 font-mono bg-white p-2 rounded-lg border border-slate-200/80">
-                        <span>Rate: <strong className="text-emerald-700">{m.effectiveInterestRate}%</strong></span>
-                        <span>Max Loan: <strong className="text-slate-900">{formatINRLakhCrore(m.scheme.maxLoanAmount)}</strong></span>
-                        <span>Promoter Margin: <strong className="text-amber-700">{m.scheme.promoterContributionPercent}%</strong></span>
-                        {m.scheme.subsidyPercent > 0 && (
-                          <span>Subsidy: <strong className="text-teal-700">{m.scheme.subsidyPercent}%</strong></span>
+                      {/* Quick Meta Row & Nearest Institution Pill */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono bg-white p-2 rounded-lg border border-slate-200/80">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-700">
+                          <span>Rate: <strong className="text-emerald-700">{m.effectiveInterestRate}%</strong></span>
+                          <span>Max: <strong className="text-slate-900">{formatINRLakhCrore(m.scheme.maxLoanAmount)}</strong></span>
+                          <span>Margin: <strong className="text-amber-700">{m.scheme.promoterContributionPercent}%</strong></span>
+                        </div>
+
+                        {schemeNearestPartner && (
+                          <div className="text-[11px] font-sans flex items-center gap-1 text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 font-medium">
+                            <Building className="w-3 h-3 text-indigo-600 shrink-0" />
+                            <span className="truncate max-w-[180px] sm:max-w-[240px] font-bold">
+                              {schemeNearestPartner.partner.name}
+                            </span>
+                            <span className="text-emerald-700 font-bold font-mono">
+                              ({schemeNearestPartner.distanceKm} km)
+                            </span>
+                          </div>
                         )}
                       </div>
 

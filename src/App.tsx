@@ -169,7 +169,15 @@ export default function App() {
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-6 text-slate-500 text-xs mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('dashboard');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="flex items-center gap-3 text-left cursor-pointer group hover:opacity-90 transition-opacity"
+            title={isHindi ? 'डैशबोर्ड पर जाएं' : 'Return to Dashboard'}
+          >
             <JanLoanSetuLogo
               size="sm"
               variant="icon"
@@ -191,7 +199,7 @@ export default function App() {
                   : 'Sarkari Loan Schemes • Trusted Partners • Dedicated Citizen Advisory'}
               </p>
             </div>
-          </div>
+          </button>
 
           <div className="flex items-center gap-6 text-slate-600 text-xs">
             <div className="flex items-center gap-1.5 font-mono">

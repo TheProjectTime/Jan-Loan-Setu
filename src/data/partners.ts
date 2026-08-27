@@ -653,5 +653,184 @@ export const CHANNEL_PARTNERS: ChannelPartner[] = [
     activeStatus: 'Active',
     workingHours: '10:00 AM - 5:45 PM',
     specialInstructions: 'Fast-track processing for economic assistance & educational loans.'
+  },
+
+  // Gujarat Region (Ahmedabad, Surat)
+  {
+    id: 'sca-gujarat-gscdc',
+    name: 'Gujarat Scheduled Castes Dev Corp (GSCDC)',
+    type: 'SCA',
+    typeLabel: 'State Channelizing Agency (SCA)',
+    branchName: 'Ahmedabad Divisional Office',
+    district: 'Ahmedabad',
+    state: 'Gujarat',
+    pincode: '380001',
+    address: 'Block No. 4, Dr. Jivraj Mehta Bhawan, Old Sachivalaya, Gandhinagar / Ahmedabad 380001',
+    latitude: 23.0225,
+    longitude: 72.5714,
+    contactPerson: 'Shri Hitesh Vankar',
+    designation: 'General Manager (Credit & Subsidies)',
+    phone: '+91 79 23253814',
+    email: 'gscdc.ahmedabad@gujarat.gov.in',
+    supportedSchemeIds: [
+      'nsfdc_micro_credit',
+      'nsfdc_mahila_samriddhi',
+      'nsfdc_term_loan',
+      'nsfdc_education_domestic',
+      'nsfdc_education_abroad',
+      'swachhata_udyami_yojana',
+      'green_business_scheme'
+    ],
+    activeStatus: 'Active',
+    workingHours: '10:30 AM - 6:00 PM',
+    specialInstructions: 'Nodal channelizing agency for NSFDC, NBCFDC & Bankable loan schemes in Gujarat.'
+  },
+  {
+    id: 'bob-ahmedabad-main',
+    name: 'Bank of Baroda (BOB)',
+    type: 'PublicSectorBank',
+    typeLabel: 'Public Sector Bank',
+    branchName: 'Ahmedabad Main & Lead Bank Office',
+    district: 'Ahmedabad',
+    state: 'Gujarat',
+    pincode: '380006',
+    address: 'Ashram Road, Ellisbridge, Ahmedabad, Gujarat 380006',
+    latitude: 23.0258,
+    longitude: 72.5699,
+    contactPerson: 'Shri R. P. Solanki',
+    designation: 'Lead District Manager (LDM)',
+    phone: '+91 79 26588210',
+    email: 'ldm.ahmedabad@bankofbaroda.co.in',
+    supportedSchemeIds: [
+      'nsfdc_term_loan',
+      'nsfdc_education_domestic',
+      'standup_india',
+      'pm_mudra_shishu_kishore',
+      'green_business_scheme'
+    ],
+    activeStatus: 'Active',
+    workingHours: '10:00 AM - 4:00 PM',
+    specialInstructions: 'Lead bank for MSME and socio-economic welfare credit in Ahmedabad zone.'
+  },
+
+  // Odisha Region (Bhubaneswar, Cuttack)
+  {
+    id: 'sca-odisha-oscstdfc',
+    name: 'Odisha SC & ST Dev Finance Co-op Corp (OSCFDC)',
+    type: 'SCA',
+    typeLabel: 'State Channelizing Agency (SCA)',
+    branchName: 'Bhubaneswar Central Office',
+    district: 'Bhubaneswar',
+    state: 'Odisha',
+    pincode: '751001',
+    address: 'Adivasi Exhibition Ground, Unit-1, Bhubaneswar, Odisha 751001',
+    latitude: 20.2961,
+    longitude: 85.8245,
+    contactPerson: 'Shri S. K. Behera',
+    designation: 'Managing Director & Scheme Head',
+    phone: '+91 674 2530182',
+    email: 'oscfdc.bbsr@odisha.gov.in',
+    supportedSchemeIds: [
+      'nsfdc_micro_credit',
+      'nsfdc_mahila_samriddhi',
+      'nsfdc_term_loan',
+      'nsfdc_education_domestic',
+      'swachhata_udyami_yojana',
+      'green_business_scheme'
+    ],
+    activeStatus: 'Active',
+    workingHours: '10:00 AM - 5:00 PM',
+    specialInstructions: 'Direct processing of NSFDC micro credit, sanitary worker assistance & term loans.'
+  },
+
+  // Punjab & Chandigarh Region (Chandigarh, Ludhiana)
+  {
+    id: 'sca-punjab-pscfc',
+    name: 'Punjab SC Land Dev & Finance Corp (PSCFC)',
+    type: 'SCA',
+    typeLabel: 'State Channelizing Agency (SCA)',
+    branchName: 'Chandigarh / Mohali Nodal Division',
+    district: 'Chandigarh',
+    state: 'Punjab',
+    pincode: '160017',
+    address: 'SCO 101-103, Sector 17-C, Chandigarh 160017',
+    latitude: 30.7398,
+    longitude: 76.7827,
+    contactPerson: 'Smt. Gurpreet Kaur',
+    designation: 'Executive Director',
+    phone: '+91 172 2704518',
+    email: 'pscfc.chd@punjab.gov.in',
+    supportedSchemeIds: [
+      'nsfdc_micro_credit',
+      'nsfdc_mahila_samriddhi',
+      'nsfdc_term_loan',
+      'nsfdc_education_domestic',
+      'nsfdc_education_abroad',
+      'swachhata_udyami_yojana'
+    ],
+    activeStatus: 'Active',
+    workingHours: '9:00 AM - 5:00 PM',
+    specialInstructions: 'Nodal channelizing agency for Punjab state credit programs and NSFDC/NBCFDC schemes.'
+  },
+
+  // Kerala Region (Thiruvananthapuram, Kochi)
+  {
+    id: 'sca-kerala-ksdc',
+    name: 'Kerala State Dev Corp for SC & ST Ltd (KSDC)',
+    type: 'SCA',
+    typeLabel: 'State Channelizing Agency (SCA)',
+    branchName: 'Thiruvananthapuram Head Office',
+    district: 'Thiruvananthapuram',
+    state: 'Kerala',
+    pincode: '695001',
+    address: 'Town Hall Road, Statue, Thiruvananthapuram, Kerala 695001',
+    latitude: 8.5241,
+    longitude: 76.9366,
+    contactPerson: 'Shri K. R. Madhavan',
+    designation: 'Managing Director',
+    phone: '+91 471 2321456',
+    email: 'ksdc.tvm@kerala.gov.in',
+    supportedSchemeIds: [
+      'nsfdc_micro_credit',
+      'nsfdc_mahila_samriddhi',
+      'nsfdc_term_loan',
+      'nsfdc_education_domestic',
+      'nsfdc_education_abroad',
+      'swachhata_udyami_yojana',
+      'green_business_scheme'
+    ],
+    activeStatus: 'Active',
+    workingHours: '10:00 AM - 5:00 PM',
+    specialInstructions: 'Official Kerala SCA for concessional finance, self-employment and educational loans.'
+  },
+
+  // Assam & North-East Region (Guwahati)
+  {
+    id: 'sca-assam-asfdc',
+    name: 'Assam State Dev Corp for SC Ltd (ASFDCL)',
+    type: 'SCA',
+    typeLabel: 'State Channelizing Agency (SCA)',
+    branchName: 'Guwahati Head Office',
+    district: 'Guwahati',
+    state: 'Assam',
+    pincode: '781006',
+    address: 'Sixmile, Khanapara, VIP Road, Guwahati, Assam 781006',
+    latitude: 26.1445,
+    longitude: 91.7362,
+    contactPerson: 'Shri Pranab Das',
+    designation: 'Project Director',
+    phone: '+91 361 2228941',
+    email: 'asfdcl.guwahati@assam.gov.in',
+    supportedSchemeIds: [
+      'nsfdc_micro_credit',
+      'nsfdc_mahila_samriddhi',
+      'nsfdc_term_loan',
+      'nsfdc_education_domestic',
+      'swachhata_udyami_yojana',
+      'green_business_scheme'
+    ],
+    activeStatus: 'Active',
+    workingHours: '10:00 AM - 5:00 PM',
+    specialInstructions: 'State apex body for Assam and coordinating partner for North-Eastern beneficiaries.'
   }
 ];

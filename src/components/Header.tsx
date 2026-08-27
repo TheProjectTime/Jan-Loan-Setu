@@ -139,11 +139,21 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
 
-            <JanLoanSetuLogo
-              size="md"
-              variant="horizontal"
-              isHindi={isHindi}
-            />
+            {/* Clickable Brand Logo & Title -> Redirects to Dashboard */}
+            <button
+              id="header-brand-home-btn"
+              type="button"
+              onClick={() => handleSelectNav('dashboard')}
+              className="flex items-center text-left cursor-pointer group rounded-xl p-1 -m-1 transition-all hover:opacity-90 active:scale-[0.98] focus:outline-hidden focus:ring-2 focus:ring-indigo-500/50"
+              title={isHindi ? 'डैशबोर्ड पर जाएं' : 'Return to Dashboard'}
+              aria-label={isHindi ? 'जन लोन सेतु - डैशबोर्ड पर जाएं' : 'Jan Loan Setu - Return to Dashboard'}
+            >
+              <JanLoanSetuLogo
+                size="md"
+                variant="horizontal"
+                isHindi={isHindi}
+              />
+            </button>
             
             {/* National Status Badge */}
             <span className="hidden xl:flex bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-semibold px-2.5 py-1 rounded-full items-center gap-1 ml-2">
