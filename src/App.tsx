@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Header } from './components/Header';
-import { ChannelSystemExplainer } from './components/ChannelSystemExplainer';
+import { Sidebar } from './components/Sidebar';
+import { DashboardView } from './components/DashboardView';
 import { SchemeRecommender } from './components/SchemeRecommender';
 import { FinancialCalculator } from './components/FinancialCalculator';
 import { PartnerLocator } from './components/PartnerLocator';
@@ -10,25 +11,26 @@ import { UserFinancialProfile, LoanScheme, ChannelPartner } from './types';
 import { GOVERNMENT_SCHEMES } from './data/schemes';
 import { CHANNEL_PARTNERS } from './data/partners';
 import { recommendSchemes } from './utils/recommender';
-import { ShieldCheck, Phone, ExternalLink, HelpCircle, CheckCircle } from 'lucide-react';
+import { JanLoanSetuLogo } from './components/JanLoanSetuLogo';
+import { ShieldCheck, Phone, ExternalLink } from 'lucide-react';
 
 export default function App() {
   const [isHindi, setIsHindi] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'recommender' | 'calculator' | 'locator' | 'ai-advisor'>('recommender');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'recommender' | 'calculator' | 'locator' | 'ai-advisor'>('dashboard');
 
-  // Core User Profile State (Default set to Giridih Small Shop example from prompt)
+  // Core User Profile State (Clean Initial State with placeholders)
   const [profile, setProfile] = useState<UserFinancialProfile>({
-    name: 'Sunil Kumar Paswan',
+    name: '',
     category: 'SC',
-    gender: 'male',
-    age: 32,
-    annualFamilyIncome: 180000,
+    gender: 'female',
+    age: 28,
+    annualFamilyIncome: 150000,
     purpose: 'small_shop',
-    businessIdea: 'Small Grocery & General Store in Pachamba Market',
+    businessIdea: '',
     projectCost: 100000,
     state: 'Jharkhand',
-    district: 'Giridih',
-    pincode: '815301'
+    district: '',
+    pincode: ''
   });
 
   // Calculate live scheme recommendations
@@ -54,6 +56,7 @@ export default function App() {
       ...preset
     }));
     setActiveTab('recommender');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Navigations
@@ -81,67 +84,87 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 font-sans flex flex-col selection:bg-indigo-600 selection:text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col selection:bg-indigo-600 selection:text-white">
       {/* Header */}
       <Header
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
         isHindi={isHindi}
         setIsHindi={setIsHindi}
-        onApplyPreset={handleApplyPreset}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Channel Finance Explainer */}
-        <ChannelSystemExplainer isHindi={isHindi} />
-
-        {/* Tab Content */}
-        {activeTab === 'recommender' && (
-          <SchemeRecommender
-            profile={profile}
-            setProfile={setProfile}
-            bestMatch={bestMatch}
-            allMatches={allMatches}
-            onSelectScheme={setSelectedScheme}
-            onNavigateToCalculator={handleNavigateToCalculator}
-            onNavigateToLocator={handleNavigateToLocator}
-            onOpenSlipModal={handleOpenSlipModal}
+      {/* Main App Container with Sidebar & Content */}
+      <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          {/* Left Navigation Sidebar */}
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            onApplyPreset={handleApplyPreset}
             isHindi={isHindi}
           />
-        )}
 
-        {activeTab === 'calculator' && (
-          <FinancialCalculator
-            selectedScheme={selectedScheme}
-            allSchemes={GOVERNMENT_SCHEMES}
-            onSelectScheme={setSelectedScheme}
-            profile={profile}
-            onNavigateToLocator={handleNavigateToLocator}
-            onOpenSlipModal={handleOpenSlipModal}
-            isHindi={isHindi}
-          />
-        )}
+          {/* Right Main Content Area */}
+          <main className="flex-1 w-full min-w-0">
+            {activeTab === 'dashboard' && (
+              <DashboardView
+                onStartRecommendation={() => {
+                  setActiveTab('recommender');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                onNavigateToTab={(tab) => {
+                  setActiveTab(tab);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                isHindi={isHindi}
+              />
+            )}
 
-        {activeTab === 'locator' && (
-          <PartnerLocator
-            selectedScheme={selectedScheme}
-            allSchemes={GOVERNMENT_SCHEMES}
-            onSelectScheme={setSelectedScheme}
-            profile={profile}
-            onOpenSlipModalWithPartner={handleOpenSlipModalWithPartner}
-            isHindi={isHindi}
-          />
-        )}
+            {activeTab === 'recommender' && (
+              <SchemeRecommender
+                profile={profile}
+                setProfile={setProfile}
+                bestMatch={bestMatch}
+                allMatches={allMatches}
+                onSelectScheme={setSelectedScheme}
+                onNavigateToCalculator={handleNavigateToCalculator}
+                onNavigateToLocator={handleNavigateToLocator}
+                onOpenSlipModal={handleOpenSlipModal}
+                isHindi={isHindi}
+              />
+            )}
 
-        {activeTab === 'ai-advisor' && (
-          <AiAssistant
-            profile={profile}
-            selectedScheme={selectedScheme}
-            isHindi={isHindi}
-          />
-        )}
-      </main>
+            {activeTab === 'calculator' && (
+              <FinancialCalculator
+                selectedScheme={selectedScheme}
+                allSchemes={GOVERNMENT_SCHEMES}
+                onSelectScheme={setSelectedScheme}
+                profile={profile}
+                onNavigateToLocator={handleNavigateToLocator}
+                onOpenSlipModal={handleOpenSlipModal}
+                isHindi={isHindi}
+              />
+            )}
+
+            {activeTab === 'locator' && (
+              <PartnerLocator
+                selectedScheme={selectedScheme}
+                allSchemes={GOVERNMENT_SCHEMES}
+                onSelectScheme={setSelectedScheme}
+                profile={profile}
+                onOpenSlipModalWithPartner={handleOpenSlipModalWithPartner}
+                isHindi={isHindi}
+              />
+            )}
+
+            {activeTab === 'ai-advisor' && (
+              <AiAssistant
+                profile={profile}
+                selectedScheme={selectedScheme}
+                isHindi={isHindi}
+              />
+            )}
+          </main>
+        </div>
+      </div>
 
       {/* Printable Pre-Application Slip Modal */}
       <ApplicationSlipModal
@@ -154,27 +177,42 @@ export default function App() {
       />
 
       {/* Footer */}
-      <footer className="bg-slate-900 border-t border-slate-800 py-8 text-slate-400 text-xs mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-slate-300">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>
-              {isHindi 
-                ? 'जन ऋण सेतु • सामाजिक न्याय एवं अधिकारिता मंत्रालय समर्पित नागरिक सहायता पोर्टल'
-                : 'Jan Loan Setu • Dedicated Citizen Advisory for Concessional Government Schemes'}
-            </span>
+      <footer className="bg-white border-t border-slate-200 py-6 text-slate-500 text-xs mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <JanLoanSetuLogo
+              size="sm"
+              variant="icon"
+            />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-800">
+                  <span className="text-[#0a3370]">Jan Loan </span>
+                  <span className="text-[#16a34a]">Setu</span>
+                </span>
+                <span className="text-slate-400">•</span>
+                <span className="text-[11px] text-slate-500">
+                  {isHindi ? 'अवसरों से आपका जुड़ाव' : 'Connecting You To Opportunities'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                {isHindi 
+                  ? 'सरकारी ऋण योजनाएं • विश्वसनीय पार्टनर • सामाजिक न्याय एवं अधिकारिता मंत्रालय'
+                  : 'Sarkari Loan Schemes • Trusted Partners • Dedicated Citizen Advisory'}
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-6 text-slate-300">
+          <div className="flex items-center gap-6 text-slate-600 text-xs">
             <div className="flex items-center gap-1.5 font-mono">
-              <Phone className="w-3.5 h-3.5 text-emerald-400" />
+              <Phone className="w-3.5 h-3.5 text-emerald-600" />
               <span>NSFDC Helpline: 1800-11-0505</span>
             </div>
             <a 
               href="https://nsfdc.nic.in" 
               target="_blank" 
               rel="noreferrer"
-              className="hover:text-white flex items-center gap-1 transition"
+              className="hover:text-slate-900 flex items-center gap-1 transition"
             >
               <span>NSFDC Portal</span>
               <ExternalLink className="w-3 h-3" />

@@ -65,6 +65,16 @@ export function resolveLocation(query: string): { latitude: number; longitude: n
     }
   }
 
+  // Check exact pincode matches in CHANNEL_PARTNERS
+  const matchedPartner = CHANNEL_PARTNERS.find(p => p.pincode === cleanQuery);
+  if (matchedPartner) {
+    return {
+      latitude: matchedPartner.latitude,
+      longitude: matchedPartner.longitude,
+      resolvedName: `${matchedPartner.district} (PIN: ${matchedPartner.pincode})`
+    };
+  }
+
   // Check pincode prefix
   for (const loc of Object.values(KNOWN_LOCATIONS)) {
     if (cleanQuery.startsWith(loc.pincodePrefix)) {

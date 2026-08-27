@@ -2,10 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { 
   MapPin, Navigation, Phone, Mail, Clock, CheckCircle2, 
   Building, Landmark, ShieldCheck, Search, Filter, ExternalLink, 
-  FileText, ArrowUpRight, Compass, AlertTriangle, Layers
+  FileText, ArrowUpRight, Compass, AlertTriangle, Layers, Radio
 } from 'lucide-react';
 import { ChannelPartner, LoanScheme, UserFinancialProfile } from '../types';
 import { searchChannelPartners, resolveLocation, KNOWN_LOCATIONS } from '../utils/locator';
+import { PartnerSvgMap } from './PartnerSvgMap';
 
 interface PartnerLocatorProps {
   selectedScheme: LoanScheme;
@@ -88,6 +89,15 @@ export const PartnerLocator: React.FC<PartnerLocatorProps> = ({
 
   // Set first partner as default selected if none selected
   const currentPartner = selectedPartner || (filteredPartners.length > 0 ? filteredPartners[0] : null);
+
+  // Derive Active Pincode based on query, profile, or current partner
+  const currentPincode = useMemo(() => {
+    const pinMatch = searchLocationQuery.match(/\b\d{6}\b/);
+    if (pinMatch) return pinMatch[0];
+    if (profile.pincode && profile.pincode.trim().length === 6) return profile.pincode.trim();
+    if (currentPartner?.pincode) return currentPartner.pincode;
+    return '815301';
+  }, [searchLocationQuery, profile.pincode, currentPartner]);
 
   return (
     <div id="channel-partner-locator-view" className="space-y-8">
@@ -336,56 +346,29 @@ export const PartnerLocator: React.FC<PartnerLocatorProps> = ({
                 )}
               </div>
 
-              {/* Interactive Visual Map Representation */}
-              <div className="relative bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden p-4 min-h-[220px] flex flex-col justify-between">
-                {/* Background Grid simulation */}
-                <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px] opacity-70"></div>
-                
-                {/* Visual Route Indicator */}
-                <div className="relative z-10 flex items-center justify-between">
-                  <div className="bg-white/95 border border-slate-200 shadow-xs px-3 py-1.5 rounded-lg flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></div>
-                    <span className="text-xs font-semibold text-slate-800">
-                      {isHindi ? 'आपका स्थान:' : 'Your Location:'} {searchLocationQuery}
-                    </span>
-                  </div>
-                  <div className="bg-emerald-50/95 border border-emerald-300 shadow-xs px-3 py-1.5 rounded-lg flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-600"></div>
-                    <span className="text-xs font-semibold text-emerald-800">
-                      {currentPartner.name}
-                    </span>
-                  </div>
-                </div>
+              {/* Interactive SVG-based Partner Proximity Radar */}
+              <PartnerSvgMap
+                userPincode={currentPincode}
+                userLocationName={searchLocationQuery}
+                userCoords={activeUserCoords}
+                partners={filteredPartners}
+                selectedPartner={currentPartner}
+                onSelectPartner={(partner) => setSelectedPartner(partner)}
+                isHindi={isHindi}
+              />
 
-                {/* Center SVG Pinpoint Route graphic */}
-                <div className="relative z-10 my-4 flex items-center justify-center">
-                  <div className="w-full max-w-sm flex items-center justify-between relative">
-                    <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-md shadow-blue-500/30">
-                      📍
-                    </div>
-                    <div className="flex-1 border-t-2 border-dashed border-emerald-600 mx-2 relative flex items-center justify-center">
-                      <span className="bg-white text-emerald-800 font-mono text-[11px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 shadow-xs">
-                        {currentPartner.distanceKm || 4.2} km
-                      </span>
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-sm shadow-md shadow-emerald-500/30">
-                      🏢
-                    </div>
-                  </div>
-                </div>
-
-                <div className="relative z-10 flex items-center justify-between text-xs text-slate-600 bg-white/95 p-2.5 rounded-xl border border-slate-200 shadow-xs">
-                  <span className="truncate mr-2">📍 {currentPartner.address}</span>
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentPartner.name + ' ' + currentPartner.address)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-indigo-700 hover:text-indigo-900 font-bold flex items-center gap-1 whitespace-nowrap ml-2"
-                  >
-                    <span>{isHindi ? 'गूगल मैप्स पर देखें' : 'Open in Maps'}</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </a>
-                </div>
+              {/* Direct Maps & Address Quick Bar */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200 gap-2">
+                <span className="truncate">📍 <strong>{isHindi ? 'पता:' : 'Address:'}</strong> {currentPartner.address}</span>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentPartner.name + ' ' + currentPartner.address)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-indigo-700 hover:text-indigo-900 font-bold flex items-center gap-1 whitespace-nowrap"
+                >
+                  <span>{isHindi ? 'गूगल मैप्स पर दिशा-निर्देश' : 'Get Directions in Maps'}</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </a>
               </div>
 
               {/* Nodal Officer Contact & Working Info */}

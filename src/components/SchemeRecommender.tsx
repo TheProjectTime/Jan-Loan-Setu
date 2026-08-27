@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   CheckCircle2, AlertCircle, ArrowRight, Calculator, MapPin, 
-  FileText, Sparkles, Building, Percent, Clock, DollarSign, 
-  HelpCircle, UserCheck, ShieldAlert, Award, ExternalLink
+  FileText, Building, Percent, Clock, DollarSign, 
+  HelpCircle, UserCheck, ShieldAlert, Award, ExternalLink,
+  ChevronDown, ChevronUp, Check, Sparkles, RotateCcw
 } from 'lucide-react';
 import { UserFinancialProfile, LoanScheme, SchemeMatchResult, LoanPurpose, BeneficiaryCategory } from '../types';
 import { formatINR, formatINRLakhCrore } from '../utils/calculator';
@@ -30,19 +31,31 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
   onOpenSlipModal,
   isHindi
 }) => {
+  const [activeFilter, setActiveFilter] = useState<'all' | 'high_match' | 'low_interest' | 'women'>('all');
+  const [expandedSchemeId, setExpandedSchemeId] = useState<string | null>(null);
+
   const PURPOSE_OPTIONS: { id: LoanPurpose; labelEn: string; labelHi: string; icon: string }[] = [
-    { id: 'small_shop', labelEn: 'Small Shop / Kirana / Vendor', labelHi: 'किराना दुकान / छोटी दुकान / विक्रेता', icon: '🏪' },
-    { id: 'micro_business', labelEn: 'Micro Business / Tailoring / Boutique', labelHi: 'सिलाई / बुटीक / सूक्ष्म व्यवसाय', icon: '✂️' },
-    { id: 'equipment_machinery', labelEn: 'Machinery / Industrial Equipment', labelHi: 'मशीनरी / उपकरण / आटा चक्की', icon: '⚙️' },
-    { id: 'education_domestic', labelEn: 'Higher Education in India (B.Tech, MBBS, etc.)', labelHi: 'भारत में उच्च शिक्षा (बी.टेक, एमबीबीएस)', icon: '🎓' },
-    { id: 'education_abroad', labelEn: 'Higher Education Abroad (MS, PhD)', labelHi: 'विदेश में उच्च शिक्षा (एमएस, पीएचडी)', icon: '✈️' },
-    { id: 'sanitation_vehicle', labelEn: 'Sanitation / Suction Vehicle Unit', labelHi: 'सफाई वाहन / सक्शन मशीन यूनिट', icon: '🚛' },
-    { id: 'green_energy', labelEn: 'Green Energy / E-Rickshaw / Solar', labelHi: 'सौर ऊर्जा / ई-रिक्शा / हरित उद्यम', icon: '☀️' },
-    { id: 'handicraft_artisan', labelEn: 'Handicraft / Weaver / Artisan Unit', labelHi: 'हस्तशिल्प / बुनकर / कारीगर', icon: '🧵' },
-    { id: 'agriculture_allied', labelEn: 'Dairy / Poultry / Agri-Allied', labelHi: 'डेयरी / पोल्ट्री / कृषि संबद्ध', icon: '🐄' }
+    { id: 'small_shop', labelEn: 'Small Shop / Kirana', labelHi: 'किराना दुकान / छोटी दुकान', icon: '🏪' },
+    { id: 'micro_business', labelEn: 'Boutique / Tailoring', labelHi: 'सिलाई / बुटीक / व्यवसाय', icon: '✂️' },
+    { id: 'equipment_machinery', labelEn: 'Machinery / Equipment', labelHi: 'मशीनरी / आटा चक्की', icon: '⚙️' },
+    { id: 'sanitation_vehicle', labelEn: 'Sanitation / Suction Vehicle', labelHi: 'सफाई वाहन / सक्शन मशीन', icon: '🚛' },
+    { id: 'green_energy', labelEn: 'E-Rickshaw / Green Solar', labelHi: 'सौर ऊर्जा / ई-रिक्शा', icon: '☀️' },
+    { id: 'handicraft_artisan', labelEn: 'Handicraft / Artisan Unit', labelHi: 'हस्तशिल्प / कारीगर', icon: '🧵' },
+    { id: 'education_domestic', labelEn: 'Higher Education (India)', labelHi: 'उच्च शिक्षा (भारत)', icon: '🎓' },
+    { id: 'education_abroad', labelEn: 'Higher Education (Abroad)', labelHi: 'विदेश में उच्च शिक्षा', icon: '✈️' },
+    { id: 'agriculture_allied', labelEn: 'Dairy / Poultry / Agri', labelHi: 'डेयरी / पोल्ट्री / कृषि', icon: '🐄' }
   ];
 
-  const QUICK_COSTS = [50000, 100000, 140000, 300000, 500000, 1000000, 1500000, 2500000, 5000000];
+  const CATEGORY_CHIPS: { id: BeneficiaryCategory; labelEn: string; labelHi: string; tag: string }[] = [
+    { id: 'SC', labelEn: 'Scheduled Caste (SC)', labelHi: 'अनुसूचित जाति (SC)', tag: 'NSFDC' },
+    { id: 'SafaiKaramchari', labelEn: 'Safai Karamchari / Sanitation', labelHi: 'सफाई कर्मचारी / स्वच्छता कर्मी', tag: 'NSKFDC' },
+    { id: 'OBC', labelEn: 'Other Backward Class (OBC)', labelHi: 'अन्य पिछड़ा वर्ग (OBC)', tag: 'NBCFDC' },
+    { id: 'ST', labelEn: 'Scheduled Tribe (ST)', labelHi: 'अनुसूचित जनजाति (ST)', tag: 'NSTFDC' },
+    { id: 'Minority', labelEn: 'Minority Community', labelHi: 'अल्पसंख्यक समुदाय', tag: 'NMDFC' },
+    { id: 'General', labelEn: 'General / EWS Category', labelHi: 'सामान्य / EWS श्रेणी', tag: 'MUDRA / Stand-Up' }
+  ];
+
+  const QUICK_COSTS = [50000, 100000, 200000, 500000, 1000000, 1500000, 2500000, 5000000];
 
   const handleInputChange = (field: keyof UserFinancialProfile, value: any) => {
     setProfile(prev => ({
@@ -51,89 +64,102 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
     }));
   };
 
-  return (
-    <div id="scheme-recommender-view" className="space-y-8">
-      {/* Introduction Banner */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs text-slate-900">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold uppercase tracking-wider mb-2">
-              <Sparkles className="w-3.5 h-3.5" />
-              {isHindi ? 'स्मार्ट योजना खोजक' : 'AI-Powered Government Loan Matcher'}
-            </div>
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-              {isHindi 
-                ? 'अपनी आवश्यकता दर्ज करें, सर्वोत्तम सरकारी ऋण योजना पाएं' 
-                : 'Enter Your Profile to Discover Eligible Government Loan Schemes'}
-            </h2>
-            <p className="text-slate-600 text-sm mt-1 max-w-2xl">
-              {isHindi
-                ? 'NSFDC, NBCFDC, NSKFDC और मुद्रा नियमों के आधार पर आपकी जाति श्रेणी, आय, व्यवसाय और स्थान के लिए सबसे सही योजना।'
-                : 'Scored dynamically against official Ministry rules for SC/OBC/Safai Karamchari/Women beneficiaries.'}
-            </p>
-          </div>
-          {bestMatch && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-right">
-              <span className="text-xs text-emerald-800 font-semibold">{isHindi ? 'शीर्ष अनुशंसित योजना' : 'Top Recommendation'}</span>
-              <p className="text-sm font-bold text-slate-900 truncate max-w-xs">{bestMatch.scheme.title}</p>
-              <div className="flex items-center justify-end gap-2 mt-1">
-                <span className="text-xs text-slate-600 font-medium">{bestMatch.effectiveInterestRate}% {isHindi ? 'ब्याज' : 'Interest'}</span>
-                <span className="bg-emerald-600 text-white text-xs font-black px-2 py-0.5 rounded-full">{bestMatch.matchScore}% Match</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+  // Filter other schemes based on tab
+  const filteredMatches = allMatches.filter(m => {
+    if (m === bestMatch) return false;
+    if (activeFilter === 'high_match') return m.matchScore >= 80;
+    if (activeFilter === 'low_interest') return m.effectiveInterestRate <= 5;
+    if (activeFilter === 'women') return m.scheme.womenConcessionPercent > 0 || m.scheme.code.includes('MAHILA');
+    return true;
+  });
 
+  return (
+    <div id="scheme-recommender-view" className="space-y-6">
       {/* Main Grid: Form on Left, Dynamic Recommendations on Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Input Form (5 cols) */}
-        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-6 shadow-xs text-slate-900 space-y-5">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: Interactive Input Form (5 cols) */}
+        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xs text-slate-900 space-y-5">
           <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <UserCheck className="w-4 h-4 text-indigo-600" />
               {isHindi ? 'आवेदक व परियोजना विवरण' : 'Applicant & Project Details'}
             </h3>
-            <span className="text-xs text-slate-500 font-medium">{isHindi ? 'सभी क्षेत्र अनिवार्य' : 'Instant live scoring'}</span>
+            <button
+              id="btn-reset-profile-form"
+              type="button"
+              onClick={() => {
+                setProfile({
+                  name: '',
+                  category: 'SC',
+                  gender: 'female',
+                  age: 28,
+                  annualFamilyIncome: 150000,
+                  purpose: 'small_shop',
+                  businessIdea: '',
+                  projectCost: 100000,
+                  state: 'Jharkhand',
+                  district: '',
+                  pincode: ''
+                });
+              }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 text-xs font-semibold rounded-lg border border-slate-300 transition shadow-2xs cursor-pointer group"
+              title={isHindi ? "फ़ॉर्म को डिफ़ॉल्ट मानों पर रीसेट करें" : "Reset form to default values"}
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-600 transition-transform group-hover:-rotate-45" />
+              <span>{isHindi ? 'फ़ॉर्म रीसेट करें' : 'Reset Form'}</span>
+            </button>
           </div>
 
-          {/* 1. Name & Category */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                {isHindi ? 'आवेदक का नाम' : 'Applicant Full Name'}
-              </label>
-              <input
-                id="input-applicant-name"
-                type="text"
-                value={profile.name}
-                onChange={e => handleInputChange('name', e.target.value)}
-                placeholder="e.g. Sunil Kumar Paswan"
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition"
-              />
-            </div>
+          {/* 1. Applicant Name */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              {isHindi ? 'आवेदक का नाम' : 'Applicant Full Name'}
+            </label>
+            <input
+              id="input-applicant-name"
+              type="text"
+              value={profile.name}
+              onChange={e => handleInputChange('name', e.target.value)}
+              placeholder={isHindi ? "उदा. रमेश कुमार / अनिता देवी" : "Enter applicant name (e.g. Ramesh Kumar / Anita Devi)"}
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition placeholder:text-slate-400"
+            />
+          </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                {isHindi ? 'सामाजिक श्रेणी (Caste Category)' : 'Social Category'}
-              </label>
-              <select
-                id="select-category"
-                value={profile.category}
-                onChange={e => handleInputChange('category', e.target.value as BeneficiaryCategory)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition"
-              >
-                <option value="SC">Scheduled Caste (SC / अनुसूचित जाति)</option>
-                <option value="SafaiKaramchari">Safai Karamchari / Sanitation Worker</option>
-                <option value="OBC">Other Backward Class (OBC / अन्य पिछड़ा वर्ग)</option>
-                <option value="ST">Scheduled Tribe (ST / अनुसूचित जनजाति)</option>
-                <option value="Minority">Minority Community (अल्पसंख्यक)</option>
-                <option value="General">General Category (सामान्य)</option>
-              </select>
+          {/* 2. Interactive Social Category Selection */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              {isHindi ? 'सामाजिक श्रेणी (Caste Category)' : 'Social Category (Apex Corporation)'}
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {CATEGORY_CHIPS.map(cat => {
+                const isSelected = profile.category === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => handleInputChange('category', cat.id)}
+                    className={`text-left p-2.5 rounded-xl border text-xs transition flex flex-col justify-between cursor-pointer ${
+                      isSelected
+                        ? 'bg-indigo-50 border-indigo-600 text-indigo-950 font-bold shadow-xs ring-1 ring-indigo-600'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="font-semibold text-xs leading-tight">
+                        {isHindi ? cat.labelHi : cat.labelEn}
+                      </span>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />}
+                    </div>
+                    <span className={`text-[10px] mt-1 font-mono ${isSelected ? 'text-indigo-600 font-bold' : 'text-slate-400'}`}>
+                      {cat.tag}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* 2. Gender & Age */}
+          {/* 3. Gender & Income */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -143,24 +169,26 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
                 <button
                   type="button"
                   onClick={() => handleInputChange('gender', 'female')}
-                  className={`py-2 px-3 rounded-xl text-xs font-semibold border transition ${
+                  className={`py-2 px-3 rounded-xl text-xs font-semibold border transition flex items-center justify-center gap-1.5 cursor-pointer ${
                     profile.gender === 'female'
-                      ? 'bg-pink-50 text-pink-700 border-pink-300 shadow-xs font-bold'
+                      ? 'bg-pink-50 text-pink-700 border-pink-300 shadow-xs font-bold ring-1 ring-pink-300'
                       : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
-                  👩 {isHindi ? 'महिला (1% छूट)' : 'Female (-1% Concession)'}
+                  <span>👩</span>
+                  <span>{isHindi ? 'महिला (-1% छूट)' : 'Female (-1%)'}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleInputChange('gender', 'male')}
-                  className={`py-2 px-3 rounded-xl text-xs font-semibold border transition ${
+                  className={`py-2 px-3 rounded-xl text-xs font-semibold border transition flex items-center justify-center gap-1.5 cursor-pointer ${
                     profile.gender === 'male'
-                      ? 'bg-indigo-50 text-indigo-700 border-indigo-300 shadow-xs font-bold'
+                      ? 'bg-indigo-50 text-indigo-700 border-indigo-300 shadow-xs font-bold ring-1 ring-indigo-300'
                       : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
-                  👨 {isHindi ? 'पुरुष' : 'Male'}
+                  <span>👨</span>
+                  <span>{isHindi ? 'पुरुष' : 'Male'}</span>
                 </button>
               </div>
             </div>
@@ -174,66 +202,78 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
                 type="number"
                 step="10000"
                 min="0"
-                value={profile.annualFamilyIncome}
-                onChange={e => handleInputChange('annualFamilyIncome', Number(e.target.value))}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition"
+                value={profile.annualFamilyIncome === 0 ? '' : profile.annualFamilyIncome}
+                onChange={e => handleInputChange('annualFamilyIncome', e.target.value === '' ? 0 : Number(e.target.value))}
+                placeholder={isHindi ? "उदा. 150000" : "Enter annual income (e.g. 150000)"}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition placeholder:text-slate-400"
               />
-              <span className="text-[11px] text-slate-500 mt-1 block">
+              <span className="text-[10px] text-slate-500 mt-1 block">
                 {profile.annualFamilyIncome <= 300000 ? (
-                  <span className="text-emerald-700 font-semibold">✅ {isHindi ? '₹3 लाख से कम (पूर्ण रियायत हेतु पात्र)' : 'Under ₹3 Lakh (Fully Eligible for Subsidized Rates)'}</span>
+                  <span className="text-emerald-700 font-semibold">✅ {isHindi ? '₹3 लाख से कम (रियायती ब्याज पात्र)' : 'Under ₹3 Lakh (Eligible for Subsidized Rates)'}</span>
                 ) : (
-                  <span className="text-amber-700 font-semibold">⚠️ {isHindi ? '₹3 लाख से अधिक (टर्म लोन / स्टैंड-अप योजनाएं लागू)' : 'Over ₹3 Lakh (Term Loans & Stand-Up apply)'}</span>
+                  <span className="text-amber-700 font-semibold">⚠️ {isHindi ? '₹3 लाख से अधिक (टर्म लोन/स्टैंड-अप)' : 'Over ₹3 Lakh (Term Loans apply)'}</span>
                 )}
               </span>
             </div>
           </div>
 
-          {/* 3. Purpose */}
+          {/* 4. Purpose Selection Chips */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              {isHindi ? 'ऋण का उद्देश्य / गतिविधि' : 'Loan Purpose / Activity'}
+              {isHindi ? 'ऋण का उद्देश्य / गतिविधि चुनें' : 'Select Loan Purpose / Activity'}
             </label>
-            <select
-              id="select-loan-purpose"
-              value={profile.purpose}
-              onChange={e => handleInputChange('purpose', e.target.value as LoanPurpose)}
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition"
-            >
-              {PURPOSE_OPTIONS.map(opt => (
-                <option key={opt.id} value={opt.id}>
-                  {opt.icon} {isHindi ? opt.labelHi : opt.labelEn}
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-3 gap-2">
+              {PURPOSE_OPTIONS.map(opt => {
+                const isSelected = profile.purpose === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => handleInputChange('purpose', opt.id)}
+                    className={`p-2 rounded-xl border text-center transition flex flex-col items-center justify-center gap-1 cursor-pointer ${
+                      isSelected
+                        ? 'bg-emerald-50 border-emerald-600 text-emerald-950 font-bold shadow-xs ring-1 ring-emerald-600'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="text-lg">{opt.icon}</span>
+                    <span className="text-[11px] leading-tight line-clamp-2">
+                      {isHindi ? opt.labelHi : opt.labelEn}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* 4. Business Idea / Course details */}
+          {/* 5. Business Idea / Course Description */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              {isHindi ? 'व्यवसाय या पाठ्यक्रम का संक्षिप्त विवरण' : 'Specific Business Idea or Course Description'}
+              {isHindi ? 'व्यवसाय या गतिविधि का संक्षिप्त विवरण' : 'Specific Business Idea or Activity Description'}
             </label>
             <input
               id="input-business-idea"
               type="text"
               value={profile.businessIdea}
               onChange={e => handleInputChange('businessIdea', e.target.value)}
-              placeholder="e.g. Small general store, tailoring unit, flour mill machinery..."
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition"
+              placeholder={isHindi ? "उदा. किराना दुकान, सिलाई व बुटीक सेंटर, आटा चक्की, ई-रिक्शा..." : "e.g. Kirana grocery store, tailoring boutique, flour mill, e-rickshaw..."}
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition placeholder:text-slate-400"
             />
           </div>
 
-          {/* 5. Project Cost */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
+          {/* 6. Project Cost & Interactive Presets */}
+          <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
+            <div className="flex items-center justify-between">
               <label className="text-xs font-semibold text-slate-700">
-                {isHindi ? 'कुल परियोजना लागत / आवश्यक ऋण' : 'Total Project Cost / Required Loan'}
+                {isHindi ? 'आवश्यक ऋण / प्रोजेक्ट लागत' : 'Required Loan / Project Cost'}
               </label>
-              <span className="text-sm font-bold text-emerald-700 font-mono">
-                {formatINR(profile.projectCost)} ({formatINRLakhCrore(profile.projectCost)})
+              <span className="text-sm font-black text-indigo-900 font-mono">
+                {formatINR(profile.projectCost)}
               </span>
             </div>
+
+            {/* Slider */}
             <input
-              id="range-project-cost"
               type="range"
               min="20000"
               max="5000000"
@@ -242,62 +282,80 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
               onChange={e => handleInputChange('projectCost', Number(e.target.value))}
               className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
             />
-            {/* Quick Chips */}
-            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+
+            {/* Quick Cost Chips */}
+            <div className="flex flex-wrap gap-1.5">
               {QUICK_COSTS.map(cost => (
                 <button
                   key={cost}
                   type="button"
                   onClick={() => handleInputChange('projectCost', cost)}
-                  className={`px-2 py-1 rounded-md text-[11px] font-medium border transition ${
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border font-mono transition cursor-pointer ${
                     profile.projectCost === cost
-                      ? 'bg-indigo-600 text-white border-indigo-600 font-bold'
-                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:text-slate-900 hover:border-slate-300'
+                      ? 'bg-indigo-600 text-white border-indigo-600 font-bold shadow-2xs'
+                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
                   }`}
                 >
-                  {cost >= 100000 ? `₹${cost / 100000}L` : `₹${cost / 1000}k`}
+                  {formatINRLakhCrore(cost)}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* 6. Location (State & District) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                {isHindi ? 'राज्य (State)' : 'State'}
-              </label>
-              <select
-                id="select-state"
-                value={profile.state}
-                onChange={e => handleInputChange('state', e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600"
-              >
-                <option value="Jharkhand">Jharkhand (झारखण्ड)</option>
-                <option value="Bihar">Bihar (बिहार)</option>
-                <option value="Uttar Pradesh">Uttar Pradesh (उत्तर प्रदेश)</option>
-                <option value="Delhi">Delhi NCR (दिल्ली)</option>
-                <option value="Maharashtra">Maharashtra (महाराष्ट्र)</option>
-                <option value="Rajasthan">Rajasthan (राजस्थान)</option>
-                <option value="Madhya Pradesh">Madhya Pradesh (मध्य प्रदेश)</option>
-                <option value="West Bengal">West Bengal (पश्चिम बंगाल)</option>
-                <option value="Karnataka">Karnataka (कर्नाटक)</option>
-                <option value="Telangana">Telangana (तेलंगाना)</option>
-                <option value="Tamil Nadu">Tamil Nadu (तमिलनाडु)</option>
-              </select>
+          {/* 7. Location (State & District & Pincode) */}
+          <div className="pt-2 border-t border-slate-100 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  {isHindi ? 'राज्य (State)' : 'State'}
+                </label>
+                <select
+                  id="select-state"
+                  value={profile.state}
+                  onChange={e => handleInputChange('state', e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600"
+                >
+                  <option value="Jharkhand">Jharkhand (झारखण्ड)</option>
+                  <option value="Bihar">Bihar (बिहार)</option>
+                  <option value="Uttar Pradesh">Uttar Pradesh (उत्तर प्रदेश)</option>
+                  <option value="Delhi">Delhi NCR (दिल्ली)</option>
+                  <option value="Maharashtra">Maharashtra (महाराष्ट्र)</option>
+                  <option value="Rajasthan">Rajasthan (राजस्थान)</option>
+                  <option value="Madhya Pradesh">Madhya Pradesh (मध्य प्रदेश)</option>
+                  <option value="West Bengal">West Bengal (पश्चिम बंगाल)</option>
+                  <option value="Karnataka">Karnataka (कर्नाटक)</option>
+                  <option value="Telangana">Telangana (तेलंगाना)</option>
+                  <option value="Tamil Nadu">Tamil Nadu (तमिलनाडु)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  {isHindi ? 'जिला / शहर (District)' : 'District / City'}
+                </label>
+                <input
+                  id="input-district"
+                  type="text"
+                  value={profile.district}
+                  onChange={e => handleInputChange('district', e.target.value)}
+                  placeholder={isHindi ? "उदा. रांची, पटना, गिरिडीह, लखनऊ..." : "Enter district (e.g. Ranchi, Patna...)"}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600 placeholder:text-slate-400"
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                {isHindi ? 'जिला / शहर (District)' : 'District / City'}
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                {isHindi ? 'पिन कोड (Pincode)' : 'Postal PIN Code'}
               </label>
               <input
-                id="input-district"
+                id="input-pincode"
                 type="text"
-                value={profile.district}
-                onChange={e => handleInputChange('district', e.target.value)}
-                placeholder="e.g. Giridih, Ranchi, Patna..."
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600"
+                maxLength={6}
+                value={profile.pincode}
+                onChange={e => handleInputChange('pincode', e.target.value.replace(/\D/g, ''))}
+                placeholder={isHindi ? "उदा. 815301 (6 अंक)" : "Enter 6-digit PIN code (e.g. 815301)"}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600 placeholder:text-slate-400"
               />
             </div>
           </div>
@@ -307,9 +365,9 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
         <div className="lg:col-span-7 space-y-6">
           {/* Best Match Hero Card */}
           {bestMatch ? (
-            <div id="best-scheme-match-card" className="bg-white border-2 border-emerald-600 rounded-2xl p-6 shadow-xs relative overflow-hidden text-slate-900">
+            <div id="best-scheme-match-card" className="bg-white border-2 border-emerald-600 rounded-2xl p-5 sm:p-6 shadow-xs relative overflow-hidden text-slate-900">
               {/* Header Badge */}
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4 mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
                 <div className="flex items-center gap-2">
                   <span className="bg-emerald-600 text-white text-xs font-extrabold uppercase px-3 py-1 rounded-full flex items-center gap-1 shadow-xs">
                     <Award className="w-3.5 h-3.5" />
@@ -339,7 +397,7 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
               </p>
 
               {/* Key Metrics Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 my-4">
                 <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
                   <span className="text-[11px] text-slate-500 block font-medium">
                     {isHindi ? 'ब्याज दर' : 'Interest Rate'}
@@ -390,7 +448,7 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
               </div>
 
               {/* Match Reasoning & Highlights */}
-              <div className="bg-emerald-50/50 rounded-xl p-4 border border-emerald-200 mb-5">
+              <div className="bg-emerald-50/50 rounded-xl p-3.5 border border-emerald-200 mb-4">
                 <h4 className="text-xs font-bold text-emerald-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   {isHindi ? 'यह योजना आपके लिए क्यों उपयुक्त है?' : 'Why This Scheme Matches Your Profile:'}
@@ -406,11 +464,11 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-slate-100">
                 <button
                   id="btn-calculate-scheme-emi"
                   onClick={() => onNavigateToCalculator(bestMatch.scheme)}
-                  className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2"
+                  className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Calculator className="w-4 h-4" />
                   <span>{isHindi ? 'ईएमआई व किस्त गणना' : 'Calculate Exact EMI'}</span>
@@ -419,16 +477,20 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
                 <button
                   id="btn-locate-scheme-partner"
                   onClick={() => onNavigateToLocator(bestMatch.scheme)}
-                  className="w-full py-2.5 px-4 bg-indigo-900 hover:bg-indigo-800 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2"
+                  className="w-full py-2.5 px-3 bg-indigo-900 hover:bg-indigo-800 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <MapPin className="w-4 h-4 text-emerald-400" />
-                  <span>{isHindi ? `निकटतम बैंक (${profile.district})` : `Find Bank (${profile.district})`}</span>
+                  <span>
+                    {isHindi 
+                      ? (profile.district ? `निकटतम बैंक (${profile.district})` : 'निकटतम बैंक खोजें') 
+                      : (profile.district ? `Find Bank (${profile.district})` : 'Find Nearest Partner Bank')}
+                  </span>
                 </button>
 
                 <button
                   id="btn-generate-slip"
                   onClick={() => onOpenSlipModal(bestMatch.scheme)}
-                  className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs rounded-xl border border-slate-300 transition flex items-center justify-center gap-2"
+                  className="w-full py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs rounded-xl border border-slate-300 transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <FileText className="w-4 h-4 text-indigo-700" />
                   <span>{isHindi ? 'आवेदन पर्ची डाउनलोड' : 'Get Pre-Application Slip'}</span>
@@ -442,66 +504,154 @@ export const SchemeRecommender: React.FC<SchemeRecommenderProps> = ({
             </div>
           )}
 
-          {/* Other Matching Schemes List */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs text-slate-900">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          {/* Other Matching Schemes List with Interactive Filter Tabs */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xs text-slate-900 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Building className="w-4 h-4 text-indigo-600" />
                 {isHindi ? 'अन्य प्रासंगिक सरकारी ऋण योजनाएं' : 'Other Relevant Government Schemes'}
               </h3>
-              <span className="text-xs text-slate-500 font-medium">
-                {allMatches.filter(m => m !== bestMatch).length} {isHindi ? 'योजनाएं उपलब्ध' : 'schemes evaluated'}
-              </span>
+
+              {/* Interactive Filter Pills */}
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+                <button
+                  onClick={() => setActiveFilter('all')}
+                  className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                    activeFilter === 'all'
+                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {isHindi ? 'सभी' : 'All'}
+                </button>
+                <button
+                  onClick={() => setActiveFilter('high_match')}
+                  className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                    activeFilter === 'high_match'
+                      ? 'bg-white text-emerald-800 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {isHindi ? '80%+ मैच' : '80%+ Match'}
+                </button>
+                <button
+                  onClick={() => setActiveFilter('low_interest')}
+                  className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                    activeFilter === 'low_interest'
+                      ? 'bg-white text-indigo-800 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {isHindi ? 'कम ब्याज (≤5%)' : '≤5% Rate'}
+                </button>
+                <button
+                  onClick={() => setActiveFilter('women')}
+                  className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                    activeFilter === 'women'
+                      ? 'bg-white text-pink-700 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {isHindi ? 'महिला विशेष' : 'Women Special'}
+                </button>
+              </div>
             </div>
 
+            {/* Scheme Cards */}
             <div className="space-y-3">
-              {allMatches
-                .filter(m => m !== bestMatch)
-                .slice(0, 4)
-                .map((m, idx) => (
-                  <div
-                    key={m.scheme.id}
-                    id={`scheme-card-${m.scheme.id}`}
-                    className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl p-4 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                  >
-                    <div className="space-y-1 max-w-md">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-900">
-                          {isHindi ? m.scheme.hindiTitle : m.scheme.title}
-                        </span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          m.isEligible ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
-                        }`}>
-                          {m.matchScore}% Match
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-600 line-clamp-1">
-                        {m.scheme.suitableForSummary}
-                      </p>
-                      <div className="flex items-center gap-3 text-xs text-slate-700 font-mono">
-                        <span>Rate: <strong className="text-emerald-700">{m.effectiveInterestRate}%</strong></span>
-                        <span>Max: <strong className="text-slate-900">{formatINRLakhCrore(m.scheme.maxLoanAmount)}</strong></span>
-                        <span>Margin: <strong className="text-amber-700">{m.scheme.promoterContributionPercent}%</strong></span>
-                      </div>
-                    </div>
+              {filteredMatches.length === 0 ? (
+                <div className="text-center py-6 text-slate-500 text-xs">
+                  {isHindi ? 'इस फ़िल्टर में कोई अन्य योजना नहीं मिली।' : 'No other schemes match this specific filter.'}
+                </div>
+              ) : (
+                filteredMatches.slice(0, 6).map((m) => {
+                  const isExpanded = expandedSchemeId === m.scheme.id;
+                  return (
+                    <div
+                      key={m.scheme.id}
+                      id={`scheme-card-${m.scheme.id}`}
+                      className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl p-4 transition space-y-3"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="space-y-0.5 max-w-md">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-900">
+                              {isHindi ? m.scheme.hindiTitle : m.scheme.title}
+                            </span>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              m.isEligible ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
+                            }`}>
+                              {m.matchScore}% Match
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-600">
+                            {m.scheme.suitableForSummary}
+                          </p>
+                        </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => onNavigateToCalculator(m.scheme)}
-                        className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 text-xs font-semibold rounded-lg transition"
-                      >
-                        {isHindi ? 'ईएमआई' : 'Calc EMI'}
-                      </button>
-                      <button
-                        onClick={() => onNavigateToLocator(m.scheme)}
-                        className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold rounded-lg transition flex items-center gap-1"
-                      >
-                        <MapPin className="w-3 h-3" />
-                        <span>{isHindi ? 'बैंक' : 'Bank'}</span>
-                      </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => onNavigateToCalculator(m.scheme)}
+                            className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 text-xs font-semibold rounded-lg transition cursor-pointer"
+                          >
+                            {isHindi ? 'ईएमआई' : 'Calc EMI'}
+                          </button>
+                          <button
+                            onClick={() => onNavigateToLocator(m.scheme)}
+                            className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold rounded-lg transition flex items-center gap-1 cursor-pointer"
+                          >
+                            <MapPin className="w-3 h-3" />
+                            <span>{isHindi ? 'बैंक' : 'Bank'}</span>
+                          </button>
+                          <button
+                            onClick={() => setExpandedSchemeId(isExpanded ? null : m.scheme.id)}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200/60 transition cursor-pointer"
+                            aria-label="Toggle details"
+                          >
+                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Quick Meta Row */}
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-700 font-mono bg-white p-2 rounded-lg border border-slate-200/80">
+                        <span>Rate: <strong className="text-emerald-700">{m.effectiveInterestRate}%</strong></span>
+                        <span>Max Loan: <strong className="text-slate-900">{formatINRLakhCrore(m.scheme.maxLoanAmount)}</strong></span>
+                        <span>Promoter Margin: <strong className="text-amber-700">{m.scheme.promoterContributionPercent}%</strong></span>
+                        {m.scheme.subsidyPercent > 0 && (
+                          <span>Subsidy: <strong className="text-teal-700">{m.scheme.subsidyPercent}%</strong></span>
+                        )}
+                      </div>
+
+                      {/* Expandable Scheme Details */}
+                      {isExpanded && (
+                        <div className="pt-2 border-t border-slate-200 space-y-2 text-xs text-slate-600 bg-white p-3 rounded-lg">
+                          <p className="leading-relaxed">{m.scheme.description}</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-sans">
+                            <div className="bg-slate-50 p-2 rounded border border-slate-100">
+                              <span className="font-bold text-slate-800 block text-[11px] mb-0.5">Eligible Channels:</span>
+                              <span className="text-[11px] text-slate-600">{m.scheme.channelPartnerTypes.join(', ')}</span>
+                            </div>
+                            <div className="bg-slate-50 p-2 rounded border border-slate-100">
+                              <span className="font-bold text-slate-800 block text-[11px] mb-0.5">Key Documents:</span>
+                              <span className="text-[11px] text-slate-600">{m.scheme.requiredDocuments.slice(0, 3).join(', ')}</span>
+                            </div>
+                          </div>
+                          <div className="pt-1 flex justify-end">
+                            <button
+                              onClick={() => onOpenSlipModal(m.scheme)}
+                              className="text-indigo-600 hover:text-indigo-800 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>{isHindi ? 'इस योजना की पर्ची बनाएं' : 'Generate Pre-Application Slip'}</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
